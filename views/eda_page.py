@@ -1,190 +1,207 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
+
 
 def render():
-
-    # ======================================
-    # Load dataset
-    # ======================================
-    @st.cache_data
-    def load_data():
-        return pd.read_csv(
-            "dataset/main_crypto_dataset.csv",
-            parse_dates=["Date"]
-        ).sort_values("Date")
-
-    df = load_data()
-
     st.title("📊 Exploratory Data Analysis (EDA)")
-    st.markdown(
-        "Explore price behaviour, return distributions, volatility, "
-        "volume patterns, and summary statistics for each cryptocurrency."
+
+    # =========================
+    # Load dataset
+    # =========================
+    df = pd.read_csv("dataset/main_crypto_dataset.csv")
+    df["Date"] = pd.to_datetime(df["Date"])
+
+    # =========================
+    # Controls
+    # =========================
+    coin = st.selectbox(
+        "Select Cryptocurrency",
+        sorted(df["Symbol"].unique()),
+        key="eda_coin_select"
     )
-    st.divider()
 
-    # ======================================
-    # Dropdowns (WITH UNIQUE KEYS)
-    # ======================================
-    col1, col2 = st.columns(2)
+    eda_type = st.selectbox(
+        "Select EDA Type",
+        [
+            "Price Over Time",
+            "Price with Moving Averages",
+            "Daily Return Distribution",
+            "Log Return Distribution",
+            "Volatility Analysis",
+            "Volume Analysis",
+            "Summary Statistics",
+            "Missing Values"
+        ],
+        key="eda_type_select"
+    )
 
-    with col1:
-        coin = st.selectbox(
-            "Select Cryptocurrency",
-            sorted(df["Symbol"].unique()),
-            key="eda_coin_select"
-        )
+    coin_df = df[df["Symbol"] == coin].sort_values("Date")
 
-    with col2:
-        eda_type = st.selectbox(
-            "Select EDA View",
-            [
-                "Price Over Time",
-                "Daily Return Distribution",
-                "Log Return Distribution",
-                "Volatility Analysis",
-                "Volume Analysis",
-                "Summary Statistics",
-                "Missing Values"
-            ],
-            key="eda_view_select"
-        )
+    # =========================
+    # Range selector (for time-series only)
+    # =========================
+    range_selector = dict(
+        buttons=[
+            dict(count=1, label="1D", step="day", stepmode="backward"),
+            dict(count=7, label="7D", step="day", stepmode="backward"),
+            dict(count=1, label="1M", step="month", stepmode="backward"),
+            dict(count=3, label="3M", step="month", stepmode="backward"),
+            dict(count=6, label="6M", step="month", stepmode="backward"),
+            dict(count=1, label="1Y", step="year", stepmode="backward"),
+            dict(step="all", label="ALL"),
+        ]
+    )
 
-    coin_df = df[df["Symbol"] == coin].copy()
-    st.divider()
+    # =========================
+    # EDA Views
+    # =========================
 
-    # ======================================
-    # EDA VIEWS
-    # ======================================
+    # -------- Price Over Time --------
     if eda_type == "Price Over Time":
+        fig = px.line(
+            coin_df,
+            x="Date",
+            y="Close",
+            title=f"{coin} – Price Over Time"
+        )
 
+        fig.update_layout(
+            hovermode="x unified",
+            xaxis=dict(
+                type="date",
+                rangeselector=range_selector,
+                rangeslider=dict(visible=True)
+            ),
+            yaxis_title="Price"
+        )
+
+        fig.update_yaxes(rangemode="tozero")
+        st.plotly_chart(fig, use_container_width=True)
+
+    # -------- Price + Moving Averages --------
+    elif eda_type == "Price with Moving Averages":
         fig = go.Figure()
+
         fig.add_trace(go.Scatter(
             x=coin_df["Date"],
             y=coin_df["Close"],
-            mode="lines",
             name="Close Price"
         ))
 
+        fig.add_trace(go.Scatter(
+            x=coin_df["Date"],
+            y=coin_df["SMA_7"],
+            name="SMA 7",
+            line=dict(dash="dot")
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=coin_df["Date"],
+            y=coin_df["SMA_14"],
+            name="SMA 14",
+            line=dict(dash="dot")
+        ))
+
         fig.update_layout(
-            title=f"{coin} – Price Over Time",
-            xaxis_title="Date",
-            yaxis_title="Price",
+            title=f"{coin} – Price with Moving Averages",
             hovermode="x unified",
-            dragmode="zoom"
+            xaxis=dict(
+                type="date",
+                rangeselector=range_selector,
+                rangeslider=dict(visible=True)
+            ),
+            yaxis_title="Price"
         )
 
-        fig.update_yaxes(fixedrange=False)
-        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+        fig.update_yaxes(rangemode="tozero")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # --------------------------------------------------
+    # -------- Daily Return Distribution --------
     elif eda_type == "Daily Return Distribution":
-
         fig = px.histogram(
             coin_df,
             x="Daily_Return",
-            nbins=100,
+            nbins=60,
             title=f"{coin} – Daily Return Distribution"
         )
 
-        fig.update_layout(
-            xaxis_title="Daily Return",
-            yaxis_title="Frequency"
-        )
-
+        fig.update_xaxes(zeroline=True)
         st.plotly_chart(fig, use_container_width=True)
 
-    # --------------------------------------------------
+    # -------- Log Return Distribution --------
     elif eda_type == "Log Return Distribution":
-
         fig = px.histogram(
             coin_df,
             x="Log_Return",
-            nbins=100,
+            nbins=60,
             title=f"{coin} – Log Return Distribution"
         )
 
-        fig.update_layout(
-            xaxis_title="Log Return",
-            yaxis_title="Frequency"
-        )
-
+        fig.update_xaxes(zeroline=True)
         st.plotly_chart(fig, use_container_width=True)
 
-    # --------------------------------------------------
+    # -------- Volatility Analysis --------
     elif eda_type == "Volatility Analysis":
-
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(
             x=coin_df["Date"],
             y=coin_df["Volatility_7"],
-            name="7-Day Volatility"
+            name="Volatility 7D"
         ))
 
         fig.add_trace(go.Scatter(
             x=coin_df["Date"],
             y=coin_df["Volatility_14"],
-            name="14-Day Volatility"
+            name="Volatility 14D"
         ))
 
         fig.update_layout(
             title=f"{coin} – Rolling Volatility",
-            xaxis_title="Date",
-            yaxis_title="Volatility",
             hovermode="x unified",
-            dragmode="zoom"
+            xaxis=dict(
+                type="date",
+                rangeselector=range_selector,
+                rangeslider=dict(visible=True)
+            ),
+            yaxis_title="Volatility"
         )
 
-        fig.update_yaxes(fixedrange=False)
-        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+        fig.update_yaxes(rangemode="tozero")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # --------------------------------------------------
+    # -------- Volume Analysis --------
     elif eda_type == "Volume Analysis":
-
-        fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=coin_df["Date"],
-            y=coin_df["Volume"],
-            name="Volume"
-        ))
+        fig = px.bar(
+            coin_df,
+            x="Date",
+            y="Volume",
+            title=f"{coin} – Trading Volume"
+        )
 
         fig.update_layout(
-            title=f"{coin} – Trading Volume",
-            xaxis_title="Date",
-            yaxis_title="Volume",
             hovermode="x unified",
-            dragmode="zoom"
+            xaxis=dict(
+                type="date",
+                rangeselector=range_selector,
+                rangeslider=dict(visible=True)
+            ),
+            yaxis_title="Volume"
         )
 
-        fig.update_yaxes(fixedrange=False)
-        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+        fig.update_yaxes(rangemode="tozero")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # --------------------------------------------------
+    # -------- Summary Statistics --------
     elif eda_type == "Summary Statistics":
-
-        stats_df = (
-            coin_df[
-                ["Open", "High", "Low", "Close",
-                 "Volume", "Daily_Return", "Log_Return"]
-            ]
-            .describe()
-            .T
-        )
-
         st.subheader(f"{coin} – Summary Statistics")
-        st.dataframe(stats_df)
+        st.dataframe(coin_df.describe())
 
-    # --------------------------------------------------
+    # -------- Missing Values --------
     elif eda_type == "Missing Values":
-
-        missing_df = (
-            coin_df.isnull()
-            .sum()
-            .reset_index()
-            .rename(columns={"index": "Feature", 0: "Missing Count"})
-        )
-
         st.subheader(f"{coin} – Missing Values")
-        st.dataframe(missing_df)
+        missing = coin_df.isna().sum().reset_index()
+        missing.columns = ["Feature", "Missing Count"]
+        st.dataframe(missing)
