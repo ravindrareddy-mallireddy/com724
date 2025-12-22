@@ -8,24 +8,16 @@ import plotly.express as px
 DATA_PATH = "dataset/main_crypto_dataset.csv"
 PCA_PATH = "dataset/pca_components.csv"
 CLUSTER_PATH = "dataset/clustered_coins.csv"
+REPRESENTATIVE_PATH = "dataset/cluster_representatives.csv"
 
-REPRESENTATIVE_COINS = {
-    0: "ZEC-USD",
-    1: "VET-USD",
-    2: "BTC-USD",
-    3: "CRV-USD"
-}
-
-# Coins for which correlation is NOT statistically valid
-NO_CORRELATION_COINS = ["ZEC-USD", "CRV-USD"]
+NO_CORRELATION_COINS = []
 
 # --------------------------------------------------
 # LOAD DATA
 # --------------------------------------------------
 @st.cache_data
 def load_main_data():
-    df = pd.read_csv(DATA_PATH, parse_dates=["Date"])
-    return df
+    return pd.read_csv(DATA_PATH, parse_dates=["Date"])
 
 @st.cache_data
 def load_pca_data():
@@ -35,8 +27,12 @@ def load_pca_data():
 def load_cluster_data():
     return pd.read_csv(CLUSTER_PATH)
 
+@st.cache_data
+def load_representatives():
+    return pd.read_csv(REPRESENTATIVE_PATH)
+
 # --------------------------------------------------
-# PAGE
+# PAGE RENDER
 # --------------------------------------------------
 def render():
     st.title("Clustering Analysis")
@@ -44,27 +40,26 @@ def render():
     df = load_main_data()
     pca_df = load_pca_data()
     cluster_df = load_cluster_data()
+    rep_df = load_representatives()
 
     # --------------------------------------------------
     # SECTION 1: REPRESENTATIVE COINS
     # --------------------------------------------------
     st.subheader("Selected Representative Coins (One per Cluster)")
 
-    rep_table = pd.DataFrame({
-        "Cluster": list(REPRESENTATIVE_COINS.keys()),
-        "Representative Coin": list(REPRESENTATIVE_COINS.values())
-    })
-
-    st.dataframe(rep_table, use_container_width=True)
+    st.dataframe(
+        rep_df.rename(columns={"Selected_Coin": "Representative Coin"}),
+        use_container_width=True
+    )
 
     st.info(
-        "One cryptocurrency was explicitly selected from each cluster to represent "
-        "the dominant behavioural characteristics of that group. These representative "
-        "coins are used consistently in correlation analysis and forecasting."
+        "One cryptocurrency was selected from each cluster based on minimum "
+        "distance to the cluster centroid in PCA space. These coins represent "
+        "the typical behaviour of their respective clusters."
     )
 
     # --------------------------------------------------
-    # SECTION 2: CLUSTERING GRAPH (PCA)
+    # SECTION 2: PCA CLUSTERING VISUALISATION
     # --------------------------------------------------
     st.subheader("Cryptocurrency Clusters (PCA Projection)")
 
@@ -74,48 +69,51 @@ def render():
         y="PC2",
         color="Cluster",
         hover_data=["Symbol"],
-        title="K-Means Clustering in Reduced Feature Space"
+        title="K-Means Clustering in PCA-Reduced Feature Space"
     )
 
     st.plotly_chart(fig_cluster, use_container_width=True)
 
     # --------------------------------------------------
-    # SECTION 3: CORRELATION INSIGHT
+    # SECTION 3: CORRELATION INSIGHT (REPRESENTATIVES ONLY)
     # --------------------------------------------------
-    st.subheader("Correlation Insight (Representative Coins)")
+    st.subheader("Correlation Insight (Representative Coins Only)")
 
     selected_coin = st.selectbox(
         "Select a Representative Coin",
-        list(REPRESENTATIVE_COINS.values()),
+        rep_df["Selected_Coin"].tolist(),
         key="cluster_corr_coin"
     )
 
     # --------------------------------------------------
-    # SPECIAL CASE: ZEC & CRV
+    # SPECIAL CASE: NO VALID CORRELATION
     # --------------------------------------------------
     if selected_coin in NO_CORRELATION_COINS:
         st.info(
             f"**Correlation not shown for {selected_coin}.**\n\n"
-            "This cryptocurrency exhibits very low return variance or idiosyncratic "
-            "behaviour over the analysis period. As a result, statistically meaningful "
-            "Pearson correlation coefficients cannot be computed, and the asset does not "
-            "appear in the correlation matrix.\n\n"
-            "This limitation is common for privacy-focused (ZEC) and yield-driven (CRV) "
-            "cryptocurrencies and does not affect their validity within clustering analysis."
+            "This cryptocurrency exhibits highly idiosyncratic or extreme return "
+            "behaviour. As a result, statistically meaningful Pearson correlation "
+            "coefficients cannot be reliably computed.\n\n"
+            "This does not affect its validity in clustering, where distance-based "
+            "similarity is used instead of correlation."
         )
         return
 
     # --------------------------------------------------
-    # CORRELATION LOGIC (BTC & VET ONLY)
+    # CORRELATION LOGIC (SAME AS CORRELATION PAGE)
     # --------------------------------------------------
     returns_df = (
         df.pivot(index="Date", columns="Symbol", values="Daily_Return")
         .dropna(how="any")
     )
 
+    if selected_coin not in returns_df.columns:
+        st.warning("Selected coin not available for correlation analysis.")
+        return
+
     corr_series = returns_df.corr()[selected_coin].drop(selected_coin)
 
-    # Positive correlations
+    # Top positive correlations
     top_positive = corr_series.sort_values(ascending=False).head(4)
 
     # Negative correlations
@@ -128,12 +126,12 @@ def render():
         top_negative = corr_series.sort_values().head(4)
         negative_note = (
             "No strong negative correlations were observed. "
-            "This is common in cryptocurrency markets where assets are influenced "
-            "by shared market-wide factors such as Bitcoin dominance and sentiment."
+            "This is common in cryptocurrency markets due to shared "
+            "market-wide influences."
         )
 
     # --------------------------------------------------
-    # DISPLAY TABLES
+    # DISPLAY RESULTS
     # --------------------------------------------------
     col1, col2 = st.columns(2)
 

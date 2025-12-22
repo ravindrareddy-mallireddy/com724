@@ -16,6 +16,8 @@ from views.landing_page import render as landing_page
 from views.eda_page import render as eda_page
 from views.correlation_page import render as correlation_page
 from views.clustering_page import render as clustering_page
+from views.forecasting_page import render as forecasting_page
+
 
 # -------------------------------------------------
 # Top navigation tabs
@@ -24,7 +26,8 @@ tabs = st.tabs([
     "🏠 Landing",
     "📈 EDA",
     "🔗 Correlation",
-    "🧩 Clustering"
+    "🧩 Clustering",
+    "📈 Forecasting"
 ])
 
 # -------------------------------------------------
@@ -41,3 +44,6 @@ with tabs[2]:
 
 with tabs[3]:
     clustering_page()
+
+with tabs[4]:
+    forecasting_page()
