@@ -1,0 +1,6 @@
+Model,Pros,Cons,Trading_Suitability,Justification
+ARIMA,Highly interpretable statistical baseline,Weak performance under volatility and market shocks,Long-term baseline analysis,"Interpretable but weak in shocks"
+LSTM,Captures complex non-linear temporal dependencies,Computationally expensive and low interpretability,Volatile and non-linear market forecasting,"Best for volatility"
+Prophet,Effective at modelling trend and seasonality,Poor response to abrupt regime changes,Long-term trend and seasonal analysis,"Good for seasonality, weak for sudden shifts"
+Random Forest,Robust and stable predictions with low variance,Slow reaction to rapid trend reversals,Short-term trading strategies,"Stable and reliable for short-term decisions"
+XGBoost,High accuracy and strong generalisation capability,Sensitive to hyperparameter tuning,Active and momentum-based trading,"Balanced accuracy and direction prediction"
