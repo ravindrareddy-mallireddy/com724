@@ -12,4 +12,6 @@ statsmodels
 tensorflow
 tensorflow.keras
 xgboost
+feedparser
+newspaper3k
 # tensorflow  # optional - uncomment if using LSTM

@@ -4,6 +4,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import numpy as np
 
+
 def render():
 
     st.set_page_config(page_title="Forecasting", layout="wide")
@@ -58,6 +59,8 @@ def render():
     else:
         coin_actual = main_df.sort_values("Date").copy()
 
+    last_hist_date = coin_actual["Date"].max()
+
     pred_df = pd.read_csv(
         os.path.join(MODELS_DIR, f"{model_prefix}_{selected_coin}_predicted.csv")
     )
@@ -82,12 +85,7 @@ def render():
     mape = np.mean(np.abs(residuals / eval_df["Close"])) * 100
     confidence = max(0, 100 - mape)
 
-    if confidence >= 85:
-        confidence_label = "High"
-    elif confidence >= 70:
-        confidence_label = "Medium"
-    else:
-        confidence_label = "Low"
+    confidence_label = "High" if confidence >= 85 else "Medium" if confidence >= 70 else "Low"
 
     st.markdown(
         f"""
@@ -97,9 +95,25 @@ def render():
         """
     )
 
-    forecast_values = forecast_df.iloc[:, 1]
+    forecast_values = forecast_df.iloc[:, 1].values
+    forecast_dates = forecast_df["Date"].values
+
     upper_band = forecast_values + error_std
     lower_band = forecast_values - error_std
+
+    # ================= MULTIPLE BUY / SELL SIGNALS (ONLY CHANGE) =================
+    buy_dates, buy_prices = [], []
+    sell_dates, sell_prices = [], []
+
+    for i in range(1, len(forecast_values) - 1):
+        if forecast_values[i] < forecast_values[i - 1] and forecast_values[i] < forecast_values[i + 1]:
+            buy_dates.append(forecast_dates[i])
+            buy_prices.append(forecast_values[i])
+
+        if forecast_values[i] > forecast_values[i - 1] and forecast_values[i] > forecast_values[i + 1]:
+            sell_dates.append(forecast_dates[i])
+            sell_prices.append(forecast_values[i])
+    # ============================================================================
 
     fig = go.Figure()
 
@@ -108,7 +122,7 @@ def render():
         y=coin_actual["Close"],
         mode="lines",
         name="Actual Price",
-        line=dict(color="black")
+        line=dict(color="#e5e7eb", width=2)
     ))
 
     fig.add_trace(go.Scatter(
@@ -116,7 +130,7 @@ def render():
         y=pred_df["Predicted_Close"],
         mode="lines",
         name="Predicted Price (Historical)",
-        line=dict(color="blue", dash="dash")
+        line=dict(color="#3b82f6", dash="dash", width=2)
     ))
 
     fig.add_trace(go.Scatter(
@@ -124,15 +138,15 @@ def render():
         y=forecast_values,
         mode="lines+markers",
         name="Forecast Price",
-        line=dict(color="red")
+        line=dict(color="#ef4444", width=0.5),
+        marker=dict(size=8)
     ))
 
     fig.add_trace(go.Scatter(
         x=forecast_df["Date"],
         y=upper_band,
         mode="lines",
-        name="Upper Confidence Bound",
-        line=dict(width=0),
+        line=dict(color="rgba(239,68,68,0.3)"),
         showlegend=False
     ))
 
@@ -140,20 +154,43 @@ def render():
         x=forecast_df["Date"],
         y=lower_band,
         mode="lines",
-        name="Lower Confidence Bound",
         fill="tonexty",
-        fillcolor="rgba(255,0,0,0.15)",
-        line=dict(width=0),
-        showlegend=False
+        fillcolor="rgba(239,68,68,0.18)",
+        line=dict(color="rgba(239,68,68,0.3)"),
+        name="Confidence Interval"
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=buy_dates,
+        y=buy_prices,
+        mode="markers",
+        name="BUY Signal",
+        marker=dict(color="lime", size=14, symbol="triangle-up")
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=sell_dates,
+        y=sell_prices,
+        mode="markers",
+        name="SELL Signal",
+        marker=dict(color="red", size=14, symbol="triangle-down")
     ))
 
     fig.update_layout(
+        template="plotly_dark",
         title=f"{selected_model} Forecast for {selected_coin}",
-        xaxis_title="Date",
-        yaxis_title="Close Price",
         hovermode="x unified",
-        template="plotly_white",
+        height=520,
+
+        plot_bgcolor="rgba(17,24,39,1)",
+        paper_bgcolor="rgba(14,17,23,1)",
+
         xaxis=dict(
+            title="Date",
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.08)",
+            zeroline=False,
+            range=[coin_actual["Date"].min(), last_hist_date],
             rangeselector=dict(
                 buttons=[
                     dict(count=1, label="1D", step="day", stepmode="backward"),
@@ -166,7 +203,21 @@ def render():
             ),
             rangeslider=dict(visible=True),
             type="date"
-        )
+        ),
+
+        yaxis=dict(
+            title="Close Price",
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.08)",
+            zeroline=False
+        ),
+
+        legend=dict(
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white")
+        ),
+
+        margin=dict(l=60, r=40, t=60, b=50)
     )
 
     st.plotly_chart(fig, use_container_width=True)

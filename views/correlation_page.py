@@ -11,7 +11,7 @@ def load_data():
 
 
 def render():
-    st.title("📊 Cryptocurrency Correlation Analysis")
+    st.title(" Cryptocurrency Correlation Analysis")
 
     df = load_data()
 

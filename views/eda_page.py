@@ -5,17 +5,13 @@ import plotly.graph_objects as go
 
 
 def render():
-    st.title("📊 Exploratory Data Analysis (EDA)")
+    st.title(" Exploratory Data Analysis (EDA)")
 
-    # =========================
-    # Load dataset
-    # =========================
+   
     df = pd.read_csv("dataset/main_crypto_dataset.csv")
     df["Date"] = pd.to_datetime(df["Date"])
 
-    # =========================
-    # Controls
-    # =========================
+   
     coin = st.selectbox(
         "Select Cryptocurrency",
         sorted(df["Symbol"].unique()),
@@ -39,9 +35,7 @@ def render():
 
     coin_df = df[df["Symbol"] == coin].sort_values("Date")
 
-    # =========================
-    # Range selector (for time-series only)
-    # =========================
+    
     range_selector = dict(
         buttons=[
             dict(count=1, label="1D", step="day", stepmode="backward"),
@@ -54,9 +48,7 @@ def render():
         ]
     )
 
-    # =========================
-    # EDA Views
-    # =========================
+   
 
     # -------- Price Over Time --------
     if eda_type == "Price Over Time":

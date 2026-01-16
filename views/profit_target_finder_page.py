@@ -12,7 +12,7 @@ import streamlit as st
 def render():
 
     st.set_page_config(page_title="Profit Target Finder", layout="wide")
-    st.title("🎯 Profit Target Finder")
+    st.title(" Profit Target Finder")
 
     # =====================================================
     # Paths (DO NOT CHANGE)

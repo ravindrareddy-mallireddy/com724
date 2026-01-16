@@ -4,9 +4,7 @@ import plotly.graph_objects as go
 
 def render():
 
-    # ======================================
-    # Load dataset
-    # ======================================
+    
     @st.cache_data
     def load_data():
         return pd.read_csv(
@@ -16,16 +14,13 @@ def render():
 
     df = load_data()
 
-    st.title("📊 Cryptocurrency Analytics Dashboard")
+    st.title(" Cryptocurrency Analytics Dashboard")
     st.markdown(
         "Historical price behaviour, technical indicators, "
         "buy/sell signals, and trading volume."
     )
     st.divider()
 
-    # ======================================
-    # Coin selector
-    # ======================================
     coin = st.selectbox(
         "Select Cryptocurrency",
         sorted(df["Symbol"].unique())
@@ -33,9 +28,7 @@ def render():
 
     coin_df = df[df["Symbol"] == coin].copy()
 
-    # ======================================
-    # Buy / Sell logic (SMA crossover)
-    # ======================================
+   
     coin_df["Buy_Signal"] = (
         (coin_df["Close"] > coin_df["SMA_14"]) &
         (coin_df["Close"].shift(1) <= coin_df["SMA_14"].shift(1))
@@ -53,9 +46,7 @@ def render():
     x_min = plot_df["Date"].min()
     x_max = plot_df["Date"].max()
 
-    # ======================================
-    # TradingView-style range selector
-    # ======================================
+  
     range_selector = dict(
         buttons=[
             dict(count=1, label="1D", step="day", stepmode="backward"),
@@ -70,9 +61,7 @@ def render():
 
     plot_config = {"scrollZoom": True}
 
-    # ======================================
-    # GRAPH 1 — PRICE ONLY
-    # ======================================
+ 
     price_fig = go.Figure()
     price_fig.add_trace(go.Scatter(
         x=plot_df["Date"],
@@ -99,9 +88,7 @@ def render():
     st.plotly_chart(price_fig, use_container_width=True, config=plot_config)
     st.divider()
 
-    # ======================================
-    # GRAPH 2 — MOVING AVERAGES
-    # ======================================
+    
     ma_fig = go.Figure()
 
     ma_fig.add_trace(go.Scatter(x=plot_df["Date"], y=plot_df["Close"], name="Close"))
@@ -132,9 +119,7 @@ def render():
     st.plotly_chart(ma_fig, use_container_width=True, config=plot_config)
     st.divider()
 
-    # ======================================
-    # GRAPH 3 — BUY & SELL (CANDLESTICK)
-    # ======================================
+ 
     signal_fig = go.Figure()
 
     signal_fig.add_trace(go.Candlestick(
@@ -180,9 +165,7 @@ def render():
     st.plotly_chart(signal_fig, use_container_width=True, config=plot_config)
     st.divider()
 
-    # ======================================
-    # GRAPH 4 — VOLUME
-    # ======================================
+    
     volume_fig = go.Figure()
     volume_fig.add_trace(go.Bar(
         x=plot_df["Date"],
