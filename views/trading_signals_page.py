@@ -1,41 +1,23 @@
-# =====================================================
-# TRADING SIGNALS PAGE (STREAMLIT) – FIXED IDS
-# =====================================================
-
 import os
 import pandas as pd
 import streamlit as st
+from datetime import datetime, timedelta
 
-# =====================================================
-# Render function
-# =====================================================
 def render():
 
     st.set_page_config(page_title="Trading Signals", layout="wide")
     st.title("Trading Signals & Decision Support")
 
-    # =====================================================
-    # Paths (UNCHANGED)
-    # =====================================================
     BASE_DIR = "dataset"
     MODELS_DIR = os.path.join(BASE_DIR, "models")
+    SIGNALS_PATH = os.path.join(MODELS_DIR, "trading_signals.csv")
 
-    SIGNALS_PATH = os.path.join(
-        MODELS_DIR, "trading_signals.csv"
-    )
-
-    # =====================================================
-    # Load data
-    # =====================================================
     if not os.path.exists(SIGNALS_PATH):
         st.error(f"Missing file: {SIGNALS_PATH}")
         st.stop()
 
     signals_df = pd.read_csv(SIGNALS_PATH)
 
-    # =====================================================
-    # Controls (INSIDE PAGE) — FIXED WITH UNIQUE KEYS
-    # =====================================================
     col1, col2 = st.columns(2)
 
     with col1:
@@ -52,9 +34,6 @@ def render():
             key="trading_horizon_select"
         )
 
-    # =====================================================
-    # Filter data
-    # =====================================================
     filtered_df = signals_df[
         (signals_df["Symbol"] == selected_coin) &
         (signals_df["Horizon"] == selected_horizon)
@@ -64,9 +43,10 @@ def render():
         st.warning("No trading signals available.")
         return
 
-    # =====================================================
-    # Confidence logic
-    # =====================================================
+    horizon_days = int(selected_horizon.replace("D", ""))
+    buy_date = datetime.today().date()
+    sell_date = buy_date + timedelta(days=horizon_days)
+
     def confidence_level(row):
         ret = abs(row["Expected_Return_%"])
         if ret >= 8:
@@ -76,13 +56,18 @@ def render():
         else:
             return "Low"
 
-    filtered_df["Confidence"] = filtered_df.apply(
-        confidence_level, axis=1
-    )
+    def risk_level(row):
+        ret = abs(row["Expected_Return_%"])
+        if ret >= 10:
+            return "High Risk"
+        elif ret >= 5:
+            return "Medium Risk"
+        else:
+            return "Low Risk"
 
-    # =====================================================
-    # Signal color mapping
-    # =====================================================
+    filtered_df["Confidence"] = filtered_df.apply(confidence_level, axis=1)
+    filtered_df["Risk_Level"] = filtered_df.apply(risk_level, axis=1)
+
     def signal_color(signal):
         if signal == "BUY":
             return "🟢 BUY"
@@ -93,9 +78,6 @@ def render():
 
     filtered_df["Signal_Display"] = filtered_df["Signal"].apply(signal_color)
 
-    # =====================================================
-    # Display results
-    # =====================================================
     st.subheader(
         f"Generated Trading Signals — {selected_coin} ({selected_horizon})"
     )
@@ -103,7 +85,7 @@ def render():
     for _, row in filtered_df.iterrows():
 
         st.markdown("---")
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             st.metric(
@@ -123,26 +105,42 @@ def render():
                 value=row["Confidence"]
             )
 
+        with col4:
+            st.metric(
+                label="Risk Level",
+                value=row["Risk_Level"]
+            )
+
         st.markdown(
             f"""
+**Best Time to Buy:** {buy_date}  
+**Best Time to Sell:** {sell_date}  
+
 **Entry Price:** £{row['Entry_Price']}  
 **Exit Price:** £{row['Exit_Price']}  
+
 **Trend Direction:** {row['Trend']}  
 **Moving Average Signal:** {row['MA_Signal']}
 """
         )
 
-    # =====================================================
-    # Explanation
-    # =====================================================
+        if row["Risk_Level"] == "High Risk":
+            st.warning("High volatility detected – suitable for aggressive investors.")
+        elif row["Risk_Level"] == "Medium Risk":
+            st.info("Moderate volatility – balanced risk and return.")
+        else:
+            st.success("Low volatility – suitable for conservative investors.")
+
     st.subheader("How Signals Are Generated")
 
     st.markdown("""
 - **BUY**: Forecast price increases by more than **+3%**
 - **SELL**: Forecast price decreases by more than **−3%**
 - **HOLD**: Price movement within threshold
-- **Confidence** is based on return magnitude
+- **Confidence** reflects forecast reliability
+- **Risk level** reflects market volatility inferred from return magnitude
+- **Buy/Sell timing** is derived dynamically from the selected horizon
 - **Trend confirmation** uses moving averages
 
-This tab converts forecasts into **actionable decision support**, as required by AE2.
+This page provides **risk-aware, time-based trading decisions**, fulfilling AE2 decision-support requirements.
 """)

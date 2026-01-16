@@ -1,6 +1,4 @@
-# =====================================================
-# MODEL COMPARISON PAGE (STREAMLIT) – FIXED PATHS
-# =====================================================
+
 
 import os
 import pandas as pd
@@ -11,9 +9,7 @@ def render():
     st.set_page_config(page_title="Model Comparison", layout="wide")
     st.title("Model Comparison & Critical Evaluation")
 
-    # =====================================================
-    # CORRECT PATHS (FIX)
-    # =====================================================
+
     BASE_DIR = "dataset"
     MODELS_DIR = os.path.join(BASE_DIR, "models")
 
@@ -25,9 +21,6 @@ def render():
         MODELS_DIR, "model_qualitative_analysis.csv"
     )
 
-    # =====================================================
-    # Load CSVs (with clear errors)
-    # =====================================================
     if not os.path.exists(METRICS_PATH):
         st.error(f"Missing file: {METRICS_PATH}")
         st.stop()
@@ -39,9 +32,7 @@ def render():
     metrics_df = pd.read_csv(METRICS_PATH)
     qualitative_df = pd.read_csv(QUALITATIVE_PATH)
 
-    # =====================================================
-    # Coin selector
-    # =====================================================
+  
     coin_list = sorted(metrics_df["Coin"].unique())
 
     selected_coin = st.selectbox(
@@ -49,25 +40,18 @@ def render():
         coin_list
     )
 
-    # =====================================================
-    # Filter metrics for selected coin
-    # =====================================================
     coin_metrics = metrics_df[
         metrics_df["Coin"] == selected_coin
     ].copy()
 
-    # =====================================================
-    # Merge quantitative + qualitative
-    # =====================================================
+ 
     comparison_df = coin_metrics.merge(
         qualitative_df,
         on="Model",
         how="left"
     )
 
-    # =====================================================
-    # Display table
-    # =====================================================
+ 
     st.subheader(f"Model Performance Comparison — {selected_coin}")
 
     st.dataframe(
@@ -86,9 +70,7 @@ def render():
         use_container_width=True,
     )
 
-    # =====================================================
-    # Key Observations (AE2 narrative)
-    # =====================================================
+
     st.subheader("Key Observations")
 
     st.markdown("""
