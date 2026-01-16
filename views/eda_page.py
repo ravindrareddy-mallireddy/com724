@@ -50,7 +50,6 @@ def render():
 
    
 
-    # -------- Price Over Time --------
     if eda_type == "Price Over Time":
         fig = px.line(
             coin_df,
@@ -72,7 +71,6 @@ def render():
         fig.update_yaxes(rangemode="tozero")
         st.plotly_chart(fig, use_container_width=True)
 
-    # -------- Price + Moving Averages --------
     elif eda_type == "Price with Moving Averages":
         fig = go.Figure()
 
@@ -110,7 +108,6 @@ def render():
         fig.update_yaxes(rangemode="tozero")
         st.plotly_chart(fig, use_container_width=True)
 
-    # -------- Daily Return Distribution --------
     elif eda_type == "Daily Return Distribution":
         fig = px.histogram(
             coin_df,
@@ -122,7 +119,6 @@ def render():
         fig.update_xaxes(zeroline=True)
         st.plotly_chart(fig, use_container_width=True)
 
-    # -------- Log Return Distribution --------
     elif eda_type == "Log Return Distribution":
         fig = px.histogram(
             coin_df,
@@ -134,7 +130,6 @@ def render():
         fig.update_xaxes(zeroline=True)
         st.plotly_chart(fig, use_container_width=True)
 
-    # -------- Volatility Analysis --------
     elif eda_type == "Volatility Analysis":
         fig = go.Figure()
 
@@ -164,7 +159,6 @@ def render():
         fig.update_yaxes(rangemode="tozero")
         st.plotly_chart(fig, use_container_width=True)
 
-    # -------- Volume Analysis --------
     elif eda_type == "Volume Analysis":
         fig = px.bar(
             coin_df,
@@ -186,12 +180,10 @@ def render():
         fig.update_yaxes(rangemode="tozero")
         st.plotly_chart(fig, use_container_width=True)
 
-    # -------- Summary Statistics --------
     elif eda_type == "Summary Statistics":
         st.subheader(f"{coin} – Summary Statistics")
         st.dataframe(coin_df.describe())
 
-    # -------- Missing Values --------
     elif eda_type == "Missing Values":
         st.subheader(f"{coin} – Missing Values")
         missing = coin_df.isna().sum().reset_index()

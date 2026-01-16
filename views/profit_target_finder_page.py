@@ -1,22 +1,16 @@
-# =====================================================
-# PROFIT TARGET FINDER PAGE (STREAMLIT)
-# =====================================================
+
 
 import os
 import pandas as pd
 import streamlit as st
 
-# =====================================================
-# Render function
-# =====================================================
+
 def render():
 
     st.set_page_config(page_title="Profit Target Finder", layout="wide")
     st.title(" Profit Target Finder")
 
-    # =====================================================
-    # Paths (DO NOT CHANGE)
-    # =====================================================
+  
     BASE_DIR = "dataset"
     OUTPUTS_DIR = os.path.join(BASE_DIR, "models")
     DATA_PATH = os.path.join(OUTPUTS_DIR, "profit_target_inputs.csv")
@@ -27,9 +21,7 @@ def render():
 
     df = pd.read_csv(DATA_PATH)
 
-    # =====================================================
-    # Controls
-    # =====================================================
+    
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -58,14 +50,10 @@ def render():
             key="capital_input"
         )
 
-    # =====================================================
-    # Filter horizon
-    # =====================================================
+    
     df = df[df["Horizon_Days"] == horizon_days].copy()
 
-    # =====================================================
-    # Core calculations
-    # =====================================================
+   
     df["Units_Affordable"] = (capital / df["Current_Price"]).astype(int)
     df["Max_Possible_Profit"] = (
         df["Units_Affordable"] * df["Expected_Profit_per_Unit"]
@@ -73,9 +61,7 @@ def render():
 
     df["Meets_Target"] = df["Max_Possible_Profit"] >= target_profit
 
-    # =====================================================
-    # Confidence Logic (Explainable, AE2-safe)
-    # =====================================================
+    
     def confidence_label(ret):
         if ret >= 15:
             return "High"
@@ -86,27 +72,21 @@ def render():
 
     df["Confidence"] = df["Expected_Return_Pct"].apply(confidence_label)
 
-    # =====================================================
-    # Filter feasible trades
-    # =====================================================
+    
     feasible_df = df[df["Meets_Target"]].copy()
 
     if feasible_df.empty:
         st.warning("⚠ No coin can meet the target profit under current constraints.")
         return
 
-    # =====================================================
-    # Rank opportunities
-    # =====================================================
+   
     feasible_df = feasible_df.sort_values(
         by=["Max_Possible_Profit", "Expected_Return_Pct"],
         ascending=False
     )
 
-    # =====================================================
-    # Display Results
-    # =====================================================
-    st.subheader("✅ Ranked Opportunities")
+
+    st.subheader("Ranked Opportunities")
 
     display_cols = [
         "Coin",
@@ -124,13 +104,11 @@ def render():
         use_container_width=True
     )
 
-    # =====================================================
-    # Best Suggestion Panel
-    # =====================================================
+  
     best = feasible_df.iloc[0]
 
     st.markdown("---")
-    st.subheader("💡 Suggested Trade")
+    st.subheader(" Suggested Trade")
 
     st.markdown(
         f"""
@@ -144,9 +122,7 @@ def render():
         """
     )
 
-    # =====================================================
-    # AE2 Alignment Note
-    # =====================================================
+   
     st.info(
         "This tool converts forecasts into profit-driven decisions, "
         "supporting realistic capital constraints and scenario-based evaluation as required in AE2."

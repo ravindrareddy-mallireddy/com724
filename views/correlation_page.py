@@ -15,9 +15,7 @@ def render():
 
     df = load_data()
 
-    # ===============================
-    # PREPARE RETURNS MATRIX
-    # ===============================
+   
     returns_df = (
         df.pivot(index="Date", columns="Symbol", values="Daily_Return")
         .dropna()
@@ -25,9 +23,7 @@ def render():
 
     corr_matrix = returns_df.corr()
 
-    # ===============================
-    # HEATMAP (ALL COINS)
-    # ===============================
+ 
     st.subheader("Correlation Heatmap (All Cryptocurrencies)")
 
     heatmap_fig = px.imshow(
@@ -46,9 +42,7 @@ def render():
 
     st.plotly_chart(heatmap_fig, use_container_width=True)
 
-    # ===============================
-    # COIN-SPECIFIC INSIGHTS
-    # ===============================
+
     st.subheader("Correlation Insights for Selected Coin")
 
     selected_coin = st.selectbox(
@@ -63,9 +57,7 @@ def render():
         .sort_values(ascending=False)
     )
 
-    # ===============================
-    # TOP POSITIVE CORRELATIONS
-    # ===============================
+    
     top_positive = (
         coin_corr.head(4)
         .reset_index()
@@ -75,9 +67,7 @@ def render():
     st.markdown("### 🔵 Top Positively Correlated Coins")
     st.dataframe(top_positive, use_container_width=True)
 
-    # ===============================
-    # NEGATIVE / LEAST CORRELATED
-    # ===============================
+  
     negative_corr = coin_corr[coin_corr < 0]
 
     if len(negative_corr) >= 1:

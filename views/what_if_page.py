@@ -1,28 +1,20 @@
-# =====================================================
-# WHAT-IF ANALYSIS PAGE (STREAMLIT) – AE2 MANDATORY
-# =====================================================
+
 
 import os
 import pandas as pd
 import streamlit as st
 
-# =====================================================
-# Render function
-# =====================================================
+
 def render():
 
     st.set_page_config(page_title="What-If Analysis", layout="wide")
     st.title("What-If Analysis & Scenario Simulation")
 
-    # =====================================================
-    # Paths (USED ONLY FOR DEFAULT PRICE)
-    # =====================================================
+  
     BASE_DIR = "dataset"
     DATASET_PATH = os.path.join(BASE_DIR, "main_crypto_dataset.csv")
 
-    # =====================================================
-    # Load dataset (safe default reference)
-    # =====================================================
+  
     if not os.path.exists(DATASET_PATH):
         st.error(f"Missing file: {DATASET_PATH}")
         st.stop()
@@ -30,9 +22,7 @@ def render():
     df = pd.read_csv(DATASET_PATH)
     df["Date"] = pd.to_datetime(df["Date"])
 
-    # =====================================================
-    # Controls — Coin selection
-    # =====================================================
+  
     selected_coin = st.selectbox(
         "Select Cryptocurrency",
         sorted(df["Symbol"].unique()),
@@ -48,9 +38,7 @@ def render():
 
     st.info(f"Latest Market Price: £{current_price:.2f}")
 
-    # =====================================================
-    # User Inputs
-    # =====================================================
+   
     st.subheader("Scenario Inputs")
 
     col1, col2, col3 = st.columns(3)
@@ -119,9 +107,7 @@ def render():
         key="whatif_fees"
     )
 
-    # =====================================================
-    # Helper: Profit calculation
-    # =====================================================
+
     def calculate_profit(buy, sell, qty, fees):
         gross = (sell - buy) * qty
         fee_cost = (buy * qty) * (fees / 100)
@@ -137,9 +123,7 @@ def render():
         buy_price, sell_price_b, quantity, fees_pct
     )
 
-    # =====================================================
-    # Results Display
-    # =====================================================
+    
     st.subheader("Scenario Comparison")
 
     colA, colB = st.columns(2)
@@ -154,9 +138,7 @@ def render():
         st.metric("Net Profit (£)", f"£{profit_b}")
         st.metric("Return (%)", f"{pct_b}%")
 
-    # =====================================================
-    # Best Scenario Highlight
-    # =====================================================
+    
     st.subheader("Outcome Summary")
 
     if profit_a > profit_b:
@@ -166,9 +148,7 @@ def render():
     else:
         st.info("Both scenarios result in the same outcome.")
 
-    # =====================================================
-    # Explanation (AE2 narrative)
-    # =====================================================
+   
     st.subheader("How This What-If Analysis Works")
 
     st.markdown("""

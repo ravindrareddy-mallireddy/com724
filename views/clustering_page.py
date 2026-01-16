@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# --------------------------------------------------
-# CONFIG
-# --------------------------------------------------
 DATA_PATH = "dataset/main_crypto_dataset.csv"
 PCA_PATH = "dataset/pca_components.csv"
 CLUSTER_PATH = "dataset/clustered_coins.csv"
@@ -12,9 +9,7 @@ REPRESENTATIVE_PATH = "dataset/cluster_representatives.csv"
 
 NO_CORRELATION_COINS = []
 
-# --------------------------------------------------
-# LOAD DATA
-# --------------------------------------------------
+
 @st.cache_data
 def load_main_data():
     return pd.read_csv(DATA_PATH, parse_dates=["Date"])
@@ -31,9 +26,7 @@ def load_cluster_data():
 def load_representatives():
     return pd.read_csv(REPRESENTATIVE_PATH)
 
-# --------------------------------------------------
-# PAGE RENDER
-# --------------------------------------------------
+
 def render():
     st.title("Clustering Analysis")
 
@@ -42,9 +35,7 @@ def render():
     cluster_df = load_cluster_data()
     rep_df = load_representatives()
 
-    # --------------------------------------------------
-    # SECTION 1: REPRESENTATIVE COINS
-    # --------------------------------------------------
+   
     st.subheader("Selected Representative Coins (One per Cluster)")
 
     st.dataframe(
@@ -58,9 +49,7 @@ def render():
         "the typical behaviour of their respective clusters."
     )
 
-    # --------------------------------------------------
-    # SECTION 2: PCA CLUSTERING VISUALISATION
-    # --------------------------------------------------
+ 
     st.subheader("Cryptocurrency Clusters (PCA Projection)")
 
     fig_cluster = px.scatter(
@@ -74,9 +63,7 @@ def render():
 
     st.plotly_chart(fig_cluster, use_container_width=True)
 
-    # --------------------------------------------------
-    # SECTION 3: CORRELATION INSIGHT (REPRESENTATIVES ONLY)
-    # --------------------------------------------------
+ 
     st.subheader("Correlation Insight (Representative Coins Only)")
 
     selected_coin = st.selectbox(
@@ -85,9 +72,7 @@ def render():
         key="cluster_corr_coin"
     )
 
-    # --------------------------------------------------
-    # SPECIAL CASE: NO VALID CORRELATION
-    # --------------------------------------------------
+  
     if selected_coin in NO_CORRELATION_COINS:
         st.info(
             f"**Correlation not shown for {selected_coin}.**\n\n"
@@ -99,9 +84,6 @@ def render():
         )
         return
 
-    # --------------------------------------------------
-    # CORRELATION LOGIC (SAME AS CORRELATION PAGE)
-    # --------------------------------------------------
     returns_df = (
         df.pivot(index="Date", columns="Symbol", values="Daily_Return")
         .dropna(how="any")
@@ -113,10 +95,8 @@ def render():
 
     corr_series = returns_df.corr()[selected_coin].drop(selected_coin)
 
-    # Top positive correlations
     top_positive = corr_series.sort_values(ascending=False).head(4)
 
-    # Negative correlations
     negative_corr = corr_series[corr_series < 0].sort_values()
 
     if len(negative_corr) >= 4:
@@ -130,9 +110,7 @@ def render():
             "market-wide influences."
         )
 
-    # --------------------------------------------------
-    # DISPLAY RESULTS
-    # --------------------------------------------------
+   
     col1, col2 = st.columns(2)
 
     with col1:

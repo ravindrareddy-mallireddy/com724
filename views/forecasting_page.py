@@ -101,7 +101,6 @@ def render():
     upper_band = forecast_values + error_std
     lower_band = forecast_values - error_std
 
-    # ================= MULTIPLE BUY / SELL SIGNALS (ONLY CHANGE) =================
     buy_dates, buy_prices = [], []
     sell_dates, sell_prices = [], []
 
@@ -113,7 +112,6 @@ def render():
         if forecast_values[i] > forecast_values[i - 1] and forecast_values[i] > forecast_values[i + 1]:
             sell_dates.append(forecast_dates[i])
             sell_prices.append(forecast_values[i])
-    # ============================================================================
 
     fig = go.Figure()
 
